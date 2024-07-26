@@ -1,0 +1,252 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[]{graphicx}
+\usepackage[]{times}
+\usepackage{geometry}
+\usepackage{framed}
+\usepackage[printonlyused,nohyperlinks,nolist]{acronym} % Acronyms
+
+\geometry{verbose,a4paper,tmargin=1.5cm,bmargin=2cm,lmargin=2cm,rmargin=2cm}
+\renewcommand{\baselinestretch}{1.2}
+
+\title{Gici ieMetrics Manual \\ \small (version 1.0)}
+
+\author{
+GICI group \vspace{0.1cm} \\
+\small Department of Information and Communications Engineering \\
+\small Universitat Aut{\`o}noma Barcelona \\
+\small http://www.gici.uab.es  -  http://gici.uab.cat/GiciWebPage/downloads.php \\
+}
+
+\date{January 2010}
+
+\begin{document}
+\maketitle
+
+\section{Description}
+
+This software is an implementation of various alternative metrics for hyperspectral images.
+Metrics are grouped in two families of metrics: statistical and classification-based.
+
+The family of statistical metrics are basically extensions of alternative bi-dimensional metrics from~\cite{CLM05}.
+An analysis of the performance of such metrics for progressive lossy-to-lossless hyperspectral image coding is provided in~\cite{BS09a}.
+The following statistical metrics are implemented: 
+
+\begin{description}
+\item[Minimum Spectral Pearson's Correlation]
+$$Pearson=\min_{x,y}\left\{\rho_{x,y}\right\}$$
+\item[\acf{MSS}]~\cite{RSS+01}
+$$MSS=\max_{x,y}\left\{ %
+\sqrt{%
+\frac{|| I_{x,y} - R_{x,y} ||_2^2}{size_z}%
++%
+(1 - \rho_{x,y}^2)^2%
+}%
+\right\}$$
+\noindent
+where
+$$\rho_{x,y} = \frac{\sigma(I_{x,y},R_{x,y})}{\sigma(I_{x,y})\sigma(R_{x,y})}$$
+and $\sigma$ is the sample variance or covariance function.
+
+It is used to ensure class homogeneity in an unsupervised classifier. It measures changes in spectral magnitude and direction.
+\item[\acf{MSA}]
+$$MSA=\max_{x,y}\left\{ \cos^{-1}\left( \frac{<I_{x,y},R_{x,y}>}{||I_{x,y}||_2 \cdot ||R_{x,y}||_2} \right) \right\}$$
+The \ac{MSA} quantifies the peak angular distortion. It is brightness invariant, and is usually presented in degrees.
+
+\item[Spectral Wang-Bovik Q]~\cite{WB02,CLM05}
+$$Q_\lambda = \min_{x,y}\left\{ Q(I_{x,y},R_{x,y}) \right\}$$
+$$Q_{stack} = \min_z\left\{ Q(I_{z},R_{z}) \right\}$$
+$$Qm = Q_\lambda \cdot Q_{stack}$$
+\noindent where
+$$ Q(U,V) = \frac{4 \sigma(U,V) \mu(U) \mu(V) }{\left(\sigma(U)^2+\sigma(V)^2\right)\left(\mu(U)^2+\mu(V)^2\right)} $$
+
+\noindent and $\mu$ is the mean function.
+
+\item[Spectral Fidelities]~\cite{EF95,CLM05}
+
+$$ F_{cube} = 1 - \frac{||I-R||_2^2}{||I||_2^2} $$
+
+$$ F_\lambda = \min_{x,y} \left\{ \frac{||I_{x,y}-R_{x,y}||_2^2}{||I_{x,y}||_2^2} \right\} $$
+$$ F_{stack} = \min_{z} \left\{ \frac{||I_{z}-R_{z}||_2^2}{||I_{z}||_2^2} \right\} $$
+
+It is intended to evaluate the distortion in the three following properties: correlation, luminance, and contrast.
+\end{description}
+
+Two classification-based measures are also implemented:
+
+\begin{description}
+ \item[k-Means classification]
+k-Means is a very common clustering approach~\cite{Mac67}. 
+The following classification distances are used: the spectral angle, the Euler distance, and the Manhattan distance.
+The spectral angle is usually selected as classification distance for its brightness invariance.
+The number of desired cluster is set to 10.
+
+ \item[\ac{RX} anomaly detection]
+This is also a very common procedure in remote sensing~\cite{RY90}. While the direct application is very straightforward, it requires the
+inverse of the spectral covariance matrix, which does not always exist. We use an alternative method based on the computation of the Mahalanobis distance in the \ac{KLT} space~\cite{MJM00}. As for the threshold selection, we consider the top 1\% locations to be anomalies.
+
+\end{description}
+
+\section{Requirements}
+
+This software is programmed in Java, so you might need a JAVA Runtime Environment(JRE) to run this application.
+We have used SUN JAVA 1.5. 
+
+\begin{description}
+\item[JAI] The Java Advanced Imaging (JAI) library is used to load and save images in formats
+other than raw or pgm. The JAI library can be freely downloaded from \emph{http://java.sun.com}.
+\textbf{Note:} You don't need to have this library installed in order to compile the source code.
+
+\item[GSL] Eigendecomposition functions are from the GNU Scientific Library (GSL) and have been translated into Java.
+The authors of the of original code are Gerard Jungman and Brian Gough. (see source files for details)
+\end{description}
+
+\section{Usage}
+
+The application is provided in a single file, a jar file (\emph{dist/iemetrics.jar}), that contains the application.
+Along with the application, the source code is also provided. If you need to rebuild the jar file, you can use the \texttt{ant} command.
+
+To launch the application you can use the following command: 
+
+\begin{framed}
+\texttt{\$ java -Xmx1200m -jar dist/iemetrics.jar --help}
+\end{framed}
+
+In a GNU/Linux environment you can also use the shell script \texttt{iemetrics} situated at the root of the iemetrics directory. 
+
+\begin{framed}
+\texttt{\$ ./iemetrics --help}
+\end{framed}
+
+The output is a double-colon-delimited list with the following fields:
+\begin{framed}%
+\vspace{-1em}%
+\begin{itemize}
+\item Maximum Spectral Similarity
+\item Maximum Spectral Angle
+\item Maximum Spectral Information Divergence
+\item Minimum Pearsons Correlation
+\item Wang Index Lambda
+\item Wang Index Stack
+\item Wang Index Both
+\item Eskicioglu Cube Fidelity
+\item Eskicioglu Spectral Fidelity
+\item Eskicioglu Stack Fidelity
+\item POC k-MEANs SAM
+\item POC k-MEANs Dot
+\item POC k-MEANs Euler
+\item POC k-MEANs Manhattan
+\item POC ISODATA SAM (disabled)
+\item POC ISODATA Dot (disabled)
+\item POC ISODATA Euler (disabled)
+\item POC ISODATA Manhattan (disabled)
+\item POC RX
+\end{itemize}%
+\vspace{-1em}%
+\end{framed}
+
+Two examples of usage are provided below:
+
+\begin{itemize}
+\item Compare two images using the alternative metrics.
+\begin{framed}%
+\vspace{-1em}%
+\begin{verbatim}
+$ ./iemetrics -i1 "$INFILE-16bpppb-bigendian.raw" -ig1 $Z $Y $X 3 0 \
+              -i2 "$OUTFILE-16bpppb-bigendian.raw" -ig2 $Z $Y $X 3 0
+\end{verbatim}%
+\vspace{-1em}%
+\end{framed}
+
+\item Compare two images using the alternative metrics, and dump some visual results of the comparison.
+\begin{framed}%
+\vspace{-1em}%
+\begin{verbatim}
+$ iemetrics -i1 "$INFILE-16bpppb-bigendian.raw" -ig1 $Z $Y $X 3 0 \
+            -i2 "$OUTFILE-16bpppb-bigendian.raw" -ig2 $Z $Y $X 3 0 \
+            -dr "$PARTIAL_RESULT_DUMP_FOLDER/"
+\end{verbatim}%
+\vspace{-1em}%
+\end{framed}
+\end{itemize}
+
+\section{Notes}
+
+If you need further assistance, you might want to contact us directly.
+
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,biblio}
+
+% Acronyms
+\begin{acronym}
+
+\acro{R-D}{Rate-Distortion}
+
+\acro{ERM}{Elementary Reversible Matrix}
+\acro{TERM}{Triangular Elementary Reversible Matrix}
+\acro{SERM}{Single-row Elementary Reversible Matrix}
+
+\acro{FFT}{Fast Fourier Transform}
+\acro{DCT}{Discrete Cosine Transform}
+\acro{KLT}{Karhunen-Lo{\^e}ve Transform}
+\acro{AKLT}{Approximate Karhunen-Lo{\^e}ve Transform}
+\acro{DPCM}{Differential Pulse Code Modulation}
+\acro{PLT}{Prediction-based Lower triangular Transform}
+\acro{ICA}{Independent Component Analysis}
+\acro{PCA}{Principal Component Analysis}
+\acro{DWT}{Discrete Wavelet Transform}
+\acro{IWT}{Integer Wavelet Transform}
+\acro{RKLT}{Reversible Karhunen-Lo{\^e}ve Transform}
+\acro{VolPCRD}{Volumetric Post-Compression Rate-Distortion}
+
+\acro{MSE}{Mean Squared Error}
+\acro{PSNR}{Peak Signal-to-Noise Ratio}
+\acro{SNR}{Signal-to-Noise Ratio}
+\acro{MAE}{Mean Absolute Error}
+
+\acro{MINLAB}{Minimum Noise Ladder-Based Structure}
+
+\acro{BIFR}{Band-Independent Fixed Rate}
+\acro{3d-DWT}{3-Dimensional Discrete Wavelet Transform}
+\acro{VolPCRD}{Volumetric Post-Compression Rate-Distortion}
+\acro{PCRD}{Post-Compression Rate-Distortion}
+
+\acro{MCT}{Multi-component Transform}
+\acro{ML}{Multi-level}
+
+\acro{CASI}{Compact Airborne Spectrographic Imager}
+\acro{CREAF}{Center for Ecological Research and Forestry Applications}
+\acro{NASA}{National Aeronautics and Space Administration}
+\acro{AVIRIS}{Airborne Visible/Infrared Imaging Spectrometer}
+\acro{CT}{Computed Tomography}
+
+\acro{JPEG2000}{}
+\acro{TCE}{Tarp-based coding with Classification for Embedding}
+\acro{3d-TCE}{3-Dimensional Tarp-based coding with Classification for Embedding}
+
+\acro{SVD}{Singular Value Decomposition}
+\acro{IEEE}{Institute of Electrical and Electronics Engineers}
+%\acro{RD}{Rate-Distortion}
+\acro{CR}{Compression-Ratio}
+\acro{ML}{Multi-Level}
+\acro{GIS}{Geographic Information Systems}
+\acro{MRI}{Magnetic Resonance Imaging}
+
+\acro{POC}{Preservation of Classification}
+\acro{MSS}{Maximum Spectral Similarity}
+\acro{MSA}{Maximum Spectral Angle}
+
+\acro{PLL}{Progressive Lossy-to-Lossless}
+\acro{RS}{Remote Sensing}
+\acro{IEM}{Information Extraction Measure}
+
+\acro{RX}{Reed Xiaoli}
+
+% Fakes for plurals to be used with facp. DO NOT USE OTHERWISE OR THEY WILL BE LISTED!
+\acro{ERMs}{Elementary Reversible Matrices}
+\acro{TERMs}{Triangular Elementary Reversible Matrices}
+\acro{SERMs}{Single-row Elementary Reversible Matrices}
+\acro{MCTs}{Multi-component Transforms}
+
+\end{acronym}
+
+\end{document}
